@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f9d8a"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Jelvia Dashboard</title>
+<style>
+:root{--bg:#f3f7f6;--card:#fff;--ink:#14302c;--mute:#6b8580;--line:#e3ecea;--brand:#0f9d8a;--brand2:#0b7d6e;--warn:#9a6508;--bad:#d64545}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1b19;--card:#16282500;--ink:#e6f2ef;--mute:#8fa9a4;--line:#243a36;--card:#162825}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}body{margin:0;font:15px/1.4 system-ui,"Segoe UI",sans-serif;background:var(--bg);color:var(--ink);padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+button,input{font:inherit}.hide{display:none!important}.row{display:flex;align-items:center;gap:10px}.grow{flex:1}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px}header b{font-size:18px}header small{opacity:.85}
+#ref{background:#ffffff30;color:#fff;border:0;border-radius:10px;padding:8px 12px}
+.banner{margin:12px 16px 0;padding:10px 14px;border-radius:12px;background:#fdf1d8;color:var(--warn);font-size:13px}.banner.bad{background:#fbe3e3;color:var(--bad)}
+main{padding:12px 16px}.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}.card{background:var(--card);border-radius:16px;padding:14px;box-shadow:0 1px 8px #0f2d2810}
+.card small,.mute{color:var(--mute)}.card b{display:block;font-size:22px;margin-top:2px}h3{margin:20px 2px 8px;font-size:15px}.list{background:var(--card);border-radius:16px;padding:2px 14px;box-shadow:0 1px 8px #0f2d2810}
+.li{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.li:last-child{border:0}
+.badge{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:#e7f6f3;color:var(--brand2)}.badge.low{background:#fdf1d8;color:var(--warn)}.badge.out{background:#fbe3e3;color:var(--bad)}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--brand)}
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;background:none;border:0;padding:12px 0 10px;color:var(--mute);font-size:12px}nav button span{display:block;font-size:20px}nav button.on{color:var(--brand)}
+input{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);margin-bottom:10px}input:focus{outline:0;border-color:var(--brand)}
+.primary{width:100%;background:var(--brand);color:#fff;border:0;border-radius:12px;padding:14px;font-weight:600}.err{color:var(--bad);min-height:20px;font-size:13px}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px;background:linear-gradient(135deg,#0f9d8a,#0b5d6e)}.box{background:var(--card);padding:28px;border-radius:22px;width:100%;max-width:380px}
+.box h1{margin:0 0 4px;font-size:24px}.pad{height:6px}
+.sheetbg{position:fixed;inset:0;background:#0a1f1c88;z-index:20;display:flex;align-items:flex-end}.sheet{background:var(--card);width:100%;border-radius:22px 22px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.lb{display:block;font-size:13px;color:var(--mute);margin:0 0 4px 2px}select{width:100%;padding:13px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);margin-bottom:10px;font:inherit}
+.mini{background:#fbe3e3;color:var(--bad);border:0;border-radius:8px;padding:5px 10px;font-size:12px;margin-left:6px}
+#toast{position:fixed;left:16px;right:16px;bottom:calc(88px + env(safe-area-inset-bottom));background:#14302c;color:#fff;padding:12px 16px;border-radius:14px;z-index:30;display:none;font-size:14px}
+</style></head><body>
+<section id="login"><div class="box"><h1 id="bn">💊 Jelvia Health and Beauty Limited</h1><p class="mute" style="margin:0 0 18px">Owner dashboard</p>
+<input id="em" type="email" placeholder="Owner email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+<p class="err" id="lerr"></p><button class="primary" id="lgo">Sign in</button></div></section>
+<section id="app" class="hide"><header class="row"><div class="grow"><b id="hn">Jelvia Health and Beauty Limited</b><br><small id="sub">Loading…</small></div><button id="ref">⟳ Refresh</button></header>
+<div id="ban"></div><main id="v"></main>
+<div id="toast"></div>
+<nav><button data-t="today" class="on"><span>📊</span>Today</button><button data-t="stock"><span>📦</span>Stock</button><button data-t="alerts"><span>⚠️</span>Alerts</button><button data-t="me"><span>⚙️</span>Account</button></nav></section>
+<script src="config.js"></script>
+<script src="ops.js"></script>
+<script>
+const C=window.POS_CONFIG;document.addEventListener('DOMContentLoaded',()=>{if(C.name){$('bn').textContent='💊 '+C.name;$('hn').textContent=C.name;document.title=C.name}});
+const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const N=k=>'₦'+(Number(k)/100).toLocaleString('en-NG',{maximumFractionDigits:0}),store=k=>{try{return JSON.parse(localStorage.getItem(k))}catch{return null}};
+let sess=store('sess'),data=store('data'),tab='today',offline=false,q='';
+async function authReq(body,grant){const r=await fetch(`${C.url}/auth/v1/token?grant_type=${grant}`,{method:'POST',headers:{apikey:C.key,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error_description||j.msg||'Sign-in failed');
+  sess={access:j.access_token,refresh:j.refresh_token,exp:Date.now()+j.expires_in*1000-60000};localStorage.setItem('sess',JSON.stringify(sess))}
+async function token(){if(!sess)throw new Error('auth');if(Date.now()>sess.exp)await authReq({refresh_token:sess.refresh},'refresh_token');return sess.access}
+async function rpc(fn,args){const r=await fetch(`${C.url}/rest/v1/rpc/${fn}`,{method:'POST',headers:{apikey:C.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json'},body:JSON.stringify(args)});
+  if(!r.ok)throw new Error(r.status===401?'auth':(await r.text()).slice(0,140));return r.json()}
+const day0=(o=0)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+o);return d.getTime()};
+async function load(){$('ref').textContent='…';
+  try{const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),1).getTime();
+    const [t,w,mo,s,v,dbt]=await Promise.all([rpc('sales_summary',{p_from:day0(),p_to:day0(1)}),rpc('sales_summary',{p_from:day0(-6),p_to:day0(1)}),rpc('sales_summary',{p_from:m,p_to:day0(1)}),rpc('stock_overview',{p_days:60,p_today:new Date().toLocaleDateString('en-CA')}),rpc('shift_variances',{p_from:Date.now()-60*864e5}),rpc('debtors',{})]);
+    data={t,w,mo,s,v,dbt,at:Date.now()};localStorage.setItem('data',JSON.stringify(data));offline=false}
+  catch(e){if(e.message==='auth'){logout();return}offline=true}
+  $('ref').textContent='⟳ Refresh';render()}
+const ago=ms=>{const m=Math.round(ms/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hours ago':Math.round(m/1440)+' days ago'};
+function banners(){if(!data)return'';let h='';
+  if(offline)h+=`<div class="banner">No internet — showing data from ${ago(Date.now()-data.at)}.</div>`;
+  const ls=data.t&&data.t.lastSync?new Date(data.t.lastSync).getTime():null;
+  if(!ls)h+='<div class="banner bad">No data has reached the cloud from the shop yet.</div>';
+  else if(Date.now()-ls>6*36e5)h+=`<div class="banner bad">The shop computer last synced ${ago(Date.now()-ls)}. Figures may be behind — ask for its internet to be switched on.</div>`;
+  return h}
+const stockBadge=p=>p.sellable<=0?'<span class="badge out">Out</span>':p.sellable<=p.reorder?`<span class="badge low">${p.sellable} left</span>`:`<span class="badge">${p.sellable}</span>`;
+const card=(l,v,s='')=>`<div class="card"><small>${l}</small><b>${v}</b><small>${s}</small></div>`;
+function render(){if(!data){$('v').innerHTML='<p class="mute" style="text-align:center;margin-top:40px">Loading…</p>';return}
+  const ls=data.t.lastSync?new Date(data.t.lastSync):null;$('sub').textContent=ls?'Shop synced '+ago(Date.now()-ls.getTime()):'Waiting for shop data';$('ban').innerHTML=banners();
+  const v=$('v'),t=data.t;
+  if(tab==='today'){const tot=Object.values(t.methods).reduce((a,b)=>a+Number(b),0)||1;
+    v.innerHTML=`<div class="cards">${card('Sales today',N(t.revenue),t.count+' transactions')}${card('Profit today',N(t.profit))}${card('This week',N(data.w.revenue),'profit '+N(data.w.profit))}${card('This month',N(data.mo.revenue),'profit '+N(data.mo.profit))}</div>
+    ${Number(t.discount)>0?`<div class="banner" style="margin:10px 0 0">Price slashes today: ${N(t.discount)}</div>`:''}${t.voided?`<div class="banner" style="margin:10px 0 0">${t.voided} sale(s) voided today</div>`:''}
+    ${varBlock()}${debtBlock()}<h3>Payment methods today</h3><div class="list">${['cash','transfer','pos'].map(m=>{const a=Number(t.methods[m]||0);return`<div style="padding:11px 0"><div class="li" style="padding:0;border:0"><span>${m.toUpperCase()}</span><b>${N(a)}</b></div><div class="bar"><i style="width:${Math.round(a/tot*100)}%"></i></div></div>`}).join('')}</div>
+    <h3>Best sellers today</h3><div class="list">${t.top.map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${x.qty} sold</b></div>`).join('')||'<div class="li mute">No sales yet today</div>'}</div>
+    <h3>Recent sales</h3><div class="list">${t.recent.map(r=>`<div class="li" style="${r.status==='voided'?'opacity:.5':''}"><span>${esc(r.receipt)}<br><small class="mute">${new Date(r.at).toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}${r.status==='voided'?' · voided':''}</small></span><b>${N(r.total)}</b></div>`).join('')||'<div class="li mute">No sales yet today</div>'}</div>`;
+    v.querySelectorAll('[data-sv]').forEach(b=>b.onclick=()=>reviewSheet((data.v||[]).find(x=>x.id===b.dataset.sv)))}
+  if(tab==='stock'){const rows=data.s.products.filter(p=>p.name.toLowerCase().includes(q.toLowerCase()));
+    v.innerHTML=`<button class="primary" id="rcv" style="margin-bottom:10px">＋ Receive stock</button><input id="sq" placeholder="Search ${data.s.products.length} products…" value="${esc(q)}"><div class="list">${rows.map(p=>`<div class="li" data-p="${p.id}" style="cursor:pointer"><span>${esc(p.name)}<br><small class="mute">${N(p.price)}</small></span>${stockBadge(p)}</div>`).join('')||'<div class="li mute">Nothing found</div>'}</div>`;
+    $('sq').oninput=e=>{q=e.target.value;const p=e.target.selectionStart;render();$('sq').focus();$('sq').setSelectionRange(p,p)};
+    $('rcv').onclick=()=>receiveSheet();v.querySelectorAll('[data-p]').forEach(el=>el.onclick=()=>menu(data.s.products.find(p=>p.id===el.dataset.p)))}
+  if(tab==='alerts'){const today=new Date().toLocaleDateString('en-CA'),b=data.s.batches,ex=b.filter(x=>x.expiry<today),so=b.filter(x=>x.expiry>=today),low=data.s.products.filter(p=>p.sellable<=p.reorder);
+    const L=(r,c,w)=>r.length?r.map(x=>`<div class="li"><span>${esc(x.name)}<br><small class="mute">Batch ${esc(x.batchNo||'—')} · ${x.remaining} units</small></span><span><span class="badge ${c}">${x.expiry}</span>${w?` <button class="mini" data-w="${x.batchId}">Write off</button>`:''}</span></div>`).join(''):'<div class="li mute">None 🎉</div>';
+    v.innerHTML=`<h3 style="color:var(--bad)">Expired (${ex.length})</h3><div class="list">${L(ex,'out',true)}</div><h3 style="color:var(--warn)">Expiring within 60 days (${so.length})</h3><div class="list">${L(so,'low')}</div>
+    <h3>Low or out of stock (${low.length})</h3><div class="list">${low.map(p=>`<div class="li"><span>${esc(p.name)}</span>${stockBadge(p)}</div>`).join('')||'<div class="li mute">All stocked</div>'}</div>`;
+    v.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>writeOffBatch(ex.find(x=>x.batchId===b.dataset.w)))}
+  if(tab==='me')v.innerHTML=`<div class="list"><div class="li"><span>Data refreshed</span><b>${ago(Date.now()-data.at)}</b></div></div><p class="mute" style="font-size:13px">Stock and price changes made here are sent to the cloud and reach the shop computer the next time it goes online. Adding products and managing cashiers is done on the shop computer.</p><button class="primary" id="lo" style="background:#e8efee;color:var(--ink)">Sign out</button>`,$('lo').onclick=logout}
+function logout(){sess=null;data=null;localStorage.removeItem('sess');localStorage.removeItem('data');$('app').classList.add('hide');$('login').classList.remove('hide')}
+async function enter(){$('login').classList.add('hide');$('app').classList.remove('hide');render();await load()}
+$('lgo').onclick=async()=>{$('lerr').textContent='';if(C.url.includes('YOUR-PROJECT')){$('lerr').textContent='Setup needed: edit config.js with your Supabase URL and anon key.';return}
+  try{await authReq({email:$('em').value.trim(),password:$('pw').value},'password');$('pw').value='';enter()}catch(e){$('lerr').textContent=e.message}};
+$('pw').addEventListener('keydown',e=>e.key==='Enter'&&$('lgo').click());$('ref').onclick=load;
+document.querySelector('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.t;[...document.querySelectorAll('nav button')].forEach(x=>x.classList.toggle('on',x===b));render();scrollTo(0,0)};
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&sess)load()});
+
+// ---- Changes made from the phone: built by ops.js, pushed to the cloud, applied by the shop computer on its next sync ----
+const dev=localStorage.getItem('dev')||(()=>{const d='PHONE-'+Math.random().toString(36).slice(2,6).toUpperCase();localStorage.setItem('dev',d);return d})();
+let adminId=null;
+async function rget(qs){const r=await fetch(`${C.url}/rest/v1/records?${qs}`,{headers:{apikey:C.key,Authorization:'Bearer '+await token()}});if(!r.ok)throw new Error((await r.text()).slice(0,140));return r.json()}
+async function getAdmin(){if(adminId)return adminId;const us=await rget('tbl=eq.users&select=data&limit=200');const a=us.map(x=>x.data).find(u=>u.role==='admin'&&u.active&&!u.deleted_at);
+  if(!a)throw new Error('The shop computer has not synced its users yet');return adminId=a.id}
+async function pushRecs(recs){const r=await fetch(`${C.url}/rest/v1/records?on_conflict=tbl,id`,{method:'POST',headers:{apikey:C.key,Authorization:'Bearer '+await token(),'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(recs)});
+  if(!r.ok)throw new Error((await r.text()).slice(0,140))}
+const once=(memo,f,build)=>{const k=JSON.stringify(f);if(memo.k!==k){memo.r=build();memo.k=k}return memo.r};   // a retry re-sends the same records (no duplicates)
+let tt;function toast(m){const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(tt);tt=setTimeout(()=>t.style.display='none',3500)}
+function sheet(title,fields,go){const bg=document.createElement('div');bg.className='sheetbg';
+  bg.innerHTML=`<div class="sheet"><h2 style="margin:0 0 14px;font-size:19px">${esc(title)}</h2>`+fields.map(f=>`<label class="lb">${esc(f.l)}</label>`+(f.opts?`<select id="s_${f.k}">${f.opts.map(o=>`<option value="${esc(o[0])}">${esc(o[1])}</option>`).join('')}</select>`:
+    `<input id="s_${f.k}" type="${f.t||'text'}" inputmode="${f.t==='number'?'decimal':'text'}" value="${esc(f.v??'')}" autocomplete="off">`)).join('')+
+    `<p class="err" id="s_err"></p><button class="primary" id="s_ok">Send</button><button class="primary" id="s_x" style="background:#e8efee;color:var(--ink);margin-top:8px">Cancel</button></div>`;
+  document.body.appendChild(bg);fields.forEach(f=>{if(f.sel!=null)bg.querySelector('#s_'+f.k).value=f.sel});const memo={};
+  bg.querySelector('#s_x').onclick=()=>bg.remove();
+  bg.querySelector('#s_ok').onclick=async e=>{e.target.disabled=true;try{const f=Object.fromEntries(fields.map(x=>[x.k,bg.querySelector('#s_'+x.k).value.trim()]));await go(f,memo);bg.remove();toast('Sent ✓ — reaches the shop computer when it next goes online');load()}
+    catch(x){bg.querySelector('#s_err').textContent=x.message==='auth'?'Please sign in again':x.message;e.target.disabled=false}}}
+function menu(p){const bg=document.createElement('div');bg.className='sheetbg';
+  bg.innerHTML=`<div class="sheet"><h2 style="margin:0 0 4px;font-size:19px">${esc(p.name)}</h2><p class="mute" style="margin:0 0 14px">${N(p.price)} · ${p.sellable} in stock</p><button class="primary" data-a="r">Receive stock</button><button class="primary" data-a="p" style="margin-top:8px">Change price</button><button class="primary" data-a="x" style="margin-top:8px">Remove stock</button><button class="primary" data-a="c" style="background:#e8efee;color:var(--ink);margin-top:8px">Close</button></div>`;
+  document.body.appendChild(bg);bg.onclick=e=>{const b=e.target.closest('button');if(!b&&e.target!==bg)return;bg.remove();const a=b&&b.dataset.a;if(a==='r')receiveSheet(p);if(a==='p')priceSheet(p);if(a==='x')removeSheet(p)}}
+async function receiveSheet(p){let sups=[];try{sups=(await rget('tbl=eq.suppliers&select=data&limit=200')).map(x=>x.data).filter(s=>!s.deleted_at)}catch(e){}
+  sheet('Receive stock',[{k:'pid',l:'Product',opts:data.s.products.map(x=>[x.id,x.name]),sel:p&&p.id},{k:'sup',l:'Supplier (optional)',opts:[['','— none —'],...sups.map(s=>[s.id,s.name])]},
+    {k:'qty',l:'Quantity received',t:'number'},{k:'cost',l:'Cost price per unit (₦)',t:'number'},{k:'exp',l:'Expiry date',t:'date'},{k:'bno',l:'Batch number (optional)'},{k:'inv',l:'Supplier invoice no. (optional)'}],
+    async(f,memo)=>{const aid=await getAdmin();await pushRecs(once(memo,f,()=>POS_OPS.receive({dev,adminId:aid,productId:f.pid,supplierId:f.sup||null,invoiceNo:f.inv||null,batchNo:f.bno||null,expiry:f.exp||null,qty:Number(f.qty),costKobo:Math.round(parseFloat(f.cost)*100)})))})}
+function priceSheet(p){sheet('Change price — '+p.name,[{k:'price',l:'New selling price (₦)',t:'number',v:p.price/100}],
+  async(f,memo)=>{const row=(await rget(`tbl=eq.products&id=eq.${encodeURIComponent(p.id)}&select=data`))[0];if(!row)throw new Error('Product not found in the cloud');const aid=await getAdmin();
+    await pushRecs(once(memo,f,()=>POS_OPS.priceChange({dev,adminId:aid,product:row.data,priceKobo:Math.round(parseFloat(f.price)*100)})))})}
+function removeSheet(p){sheet('Remove stock — '+p.name,[{k:'qty',l:'Quantity to remove',t:'number'},{k:'why',l:'Reason',opts:[['damaged','Damaged'],['correction','Stock count correction']]}],
+  async(f,memo)=>{const aid=await getAdmin();const bs=(await rpc('product_batches',{p_product:p.id,p_today:new Date().toLocaleDateString('en-CA')})).map(b=>({batchId:b.batchId,remaining:Number(b.remaining)}));
+    await pushRecs(once(memo,f,()=>POS_OPS.removeStock({dev,adminId:aid,productId:p.id,qty:Number(f.qty),reason:f.why,batches:bs})))})}
+async function writeOffBatch(x){if(!x||!confirm('Write off '+x.remaining+' units of '+x.name+' (batch '+(x.batchNo||'—')+')? It is removed from stock and recorded.'))return;
+  try{await pushRecs(POS_OPS.writeOff({dev,adminId:await getAdmin(),productId:x.productId,batchId:x.batchId,remaining:Number(x.remaining)}));toast('Sent ✓ — reaches the shop computer when it next goes online');load()}catch(e){alert(e.message==='auth'?'Please sign in again':e.message)}}
+const dtxt=v=>v===0?'':(v>0?'over ':'short ')+N(Math.abs(v)),OUTL={accepted:'Accepted',explained:'Explained',repay:'Cashier to repay',investigating:'Investigating'};
+const diffTxt=x=>[['Cash',x.cash],['Transfer',x.transfer],['POS',x.pos]].filter(a=>Number(a[1])).map(a=>a[0]+' '+dtxt(Number(a[1]))).join(' · ');
+function debtBlock(){const l=data.dbt||[];if(!l.length)return'';const tot=l.reduce((a,x)=>a+Number(x.balance),0);
+  return `<h3>Customers who owe <span class="mute" style="font-weight:400">· ${N(tot)} in total</span></h3><div class="list">${l.slice(0,10).map(x=>`<div class="li"><span>${esc(x.name)}<br><small class="mute">${x.phone?`<a href="tel:${esc(x.phone)}" style="color:inherit">${esc(x.phone)}</a> · `:''}limit ${N(x.limit)}</small></span><b>${N(x.balance)}</b></div>`).join('')}</div>`}
+function varBlock(){const l=(data.v||[]).slice(0,8);if(!l.length)return'';
+  return `<h3 style="color:var(--bad)">Cashier shift differences</h3><div class="list">${l.map(x=>`<div class="li" ${x.outcome?'':`data-sv="${x.id}" style="cursor:pointer"`}><span><b>${esc(x.cashier)}</b> · ${new Date(x.at).toLocaleDateString('en-NG',{day:'numeric',month:'short'})}<br><small class="mute">${diffTxt(x)}${x.note?' — '+esc(x.note):''}</small></span>${x.outcome?`<span class="badge">${OUTL[x.outcome]}</span>`:'<span class="badge out">Review</span>'}</div>`).join('')}</div>`}
+function reviewSheet(x){if(!x)return;sheet('Review — '+x.cashier+': '+diffTxt(x),[{k:'out',l:'Outcome',opts:[['accepted','Accepted — no action needed'],['explained','Explained / corrected'],['repay','Cashier to repay'],['investigating','Under investigation']]},{k:'note',l:'Note (optional)'}],
+  async(f,memo)=>{const aid=await getAdmin();await pushRecs(once(memo,f,()=>POS_OPS.reviewShift({dev,adminId:aid,shiftId:x.id,outcome:f.out,note:f.note})))})}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(sess)enter();
+</script></body></html>
