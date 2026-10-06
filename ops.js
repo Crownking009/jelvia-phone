@@ -43,6 +43,43 @@
     const r = { id: uid(), ...base(c), shift_close_id: o.shiftId, reviewer_id: c.adminId, outcome: o.outcome, note: (o.note || '').trim() || null };
     return [rec('shift_reviews', r, c), log(c, 'shift.review', 'shift_closes', o.shiftId, { outcome: o.outcome })];
   }
-  root.POS_OPS = { receive, priceChange, removeStock, writeOff, reviewShift };
+  const clean = (s) => (s == null ? '' : String(s)).trim(), nul = (s) => clean(s) || null;
+  function catFor(o, c, out) {              // an existing category, a new one (matched ignoring capitals), or none
+    const name = clean(o.newCategory);
+    if (!name) return o.categoryId || null;
+    const hit = (o.existingCategories || []).find((x) => x.name.trim().toLowerCase() === name.toLowerCase());
+    if (hit) return hit.id;
+    const cat = { id: uid(), ...base(c), name }; out.push(rec('categories', cat, c)); return cat.id;
+  }
+  function addProduct(o) {
+    const c = ctx(o), name = clean(o.name);
+    if (!name) throw new Error('Product name is required');
+    if (!Number.isInteger(o.priceKobo) || o.priceKobo <= 0) throw new Error('Enter a price above zero');
+    const out = [], catId = catFor(o, c, out);
+    const p = { id: uid(), ...base(c), name, category_id: catId, barcode: nul(o.barcode), base_unit: 'piece', selling_price: o.priceKobo,
+      reorder_level: Math.max(0, parseInt(o.reorder, 10) || 0), prescription_only: o.rx ? 1 : 0, active: 1 };
+    return [...out, rec('products', p, c), log(c, 'product.create', 'products', p.id, { name })];
+  }
+  function editProduct(o) {                 // o.product = the product's current row from the cloud; the price is changed separately
+    const c = ctx(o), name = clean(o.name);
+    if (!o.product || !o.product.id) throw new Error('Product not found');
+    if (!name) throw new Error('Product name is required');
+    const out = [], catId = catFor(o, c, out);
+    const p = { ...o.product, name, category_id: catId, barcode: nul(o.barcode), reorder_level: Math.max(0, parseInt(o.reorder, 10) || 0), prescription_only: o.rx ? 1 : 0, updated_at: c.now };
+    return [...out, rec('products', p, c), log(c, 'product.edit', 'products', p.id, { name })];
+  }
+  function setActive(o, on) {               // archive hides a product from selling; history and stock records stay
+    const c = ctx(o); if (!o.product || !o.product.id) throw new Error('Product not found');
+    const p = { ...o.product, active: on ? 1 : 0, updated_at: c.now };
+    return [rec('products', p, c), log(c, on ? 'product.restore' : 'product.archive', 'products', p.id, { name: p.name })];
+  }
+  const archiveProduct = (o) => setActive(o, false), restoreProduct = (o) => setActive(o, true);
+  function addSupplier(o) {
+    const c = ctx(o), name = clean(o.name);
+    if (!name) throw new Error('Supplier name is required');
+    const s = { id: uid(), ...base(c), name, phone: nul(o.phone), notes: nul(o.notes) };
+    return [rec('suppliers', s, c), log(c, 'supplier.create', 'suppliers', s.id, { name })];
+  }
+  root.POS_OPS = { receive, priceChange, removeStock, writeOff, reviewShift, addProduct, editProduct, archiveProduct, restoreProduct, addSupplier };
   if (typeof module !== 'undefined') module.exports = root.POS_OPS;
 })(typeof window !== 'undefined' ? window : globalThis);
