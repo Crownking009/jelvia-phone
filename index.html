@@ -37,6 +37,7 @@ button.primary[style*="e8efee"]{background:var(--line)!important;color:var(--ink
 <nav><button data-t="today" class="on"><span>📊</span>Today</button><button data-t="stock"><span>📦</span>Stock</button><button data-t="alerts"><span>⚠️</span>Alerts</button><button data-t="me"><span>⚙️</span>Account</button></nav></section>
 <script src="config.js"></script>
 <script src="ops.js"></script>
+<script src="refund.js"></script>
 <script>
 const C=window.POS_CONFIG;document.addEventListener('DOMContentLoaded',()=>{if(C.name){$('bn').textContent='💊 '+C.name;$('hn').textContent=C.name;document.title=C.name}});
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -51,12 +52,12 @@ async function rpc(fn,args){const r=await fetch(`${C.url}/rest/v1/rpc/${fn}`,{me
 const day0=(o=0)=>{const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+o);return d.getTime()};
 async function load(){$('ref').textContent='…';
   try{const n=new Date(),m=new Date(n.getFullYear(),n.getMonth(),1).getTime();
-    const [t,w,mo,s,v,dbt]=await Promise.all([rpc('sales_summary',{p_from:day0(),p_to:day0(1)}),rpc('sales_summary',{p_from:day0(-6),p_to:day0(1)}),rpc('sales_summary',{p_from:m,p_to:day0(1)}),rpc('stock_overview',{p_days:60,p_today:new Date().toLocaleDateString('en-CA')}),rpc('shift_variances',{p_from:Date.now()-60*864e5}),rpc('debtors',{})]);
-    data={t,w,mo,s,v,dbt,at:Date.now()};localStorage.setItem('data',JSON.stringify(data));offline=false}
+    const [t,w,mo,s,v,dbt,rc]=await Promise.all([rpc('sales_summary',{p_from:day0(),p_to:day0(1)}),rpc('sales_summary',{p_from:day0(-6),p_to:day0(1)}),rpc('sales_summary',{p_from:m,p_to:day0(1)}),rpc('stock_overview',{p_days:60,p_today:new Date().toLocaleDateString('en-CA')}),rpc('shift_variances',{p_from:Date.now()-60*864e5}),rpc('debtors',{}),rpc('refund_conflicts',{}).catch(()=>[])]);
+    data={t,w,mo,s,v,dbt,rc,at:Date.now()};localStorage.setItem('data',JSON.stringify(data));offline=false}
   catch(e){if(e.message==='auth'){logout();return}offline=true}
   $('ref').textContent='⟳ Refresh';render()}
 const ago=ms=>{const m=Math.round(ms/6e4);return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' hours ago':Math.round(m/1440)+' days ago'};
-function banners(){if(!data)return'';let h='';
+function banners(){if(!data)return'';let h='';if((data.rc||[]).length)h+=`<div class="banner bad">Refund check: ${data.rc.map(x=>esc(x.product)+' on '+esc(x.receipt)).join(', ')} was refunded more times than it was sold. Check the refunds on the phone and on the shop computer.</div>`;
   if(offline)h+=`<div class="banner">No internet — showing data from ${ago(Date.now()-data.at)}.</div>`;
   const ls=data.t&&data.t.lastSync?new Date(data.t.lastSync).getTime():null;
   if(!ls)h+='<div class="banner bad">No data has reached the cloud from the shop yet.</div>';
@@ -83,7 +84,7 @@ function render(){if(!data){$('v').innerHTML='<p class="mute" style="text-align:
     v.innerHTML=`<h3 style="color:var(--bad)">Expired (${ex.length})</h3><div class="list">${L(ex,'out',true)}</div><h3 style="color:var(--warn)">Expiring within 60 days (${so.length})</h3><div class="list">${L(so,'low')}</div>
     <h3>Low or out of stock (${low.length})</h3><div class="list">${low.map(p=>`<div class="li"><span>${esc(p.name)}</span>${stockBadge(p)}</div>`).join('')||'<div class="li mute">All stocked</div>'}</div>`;
     v.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>writeOffBatch(ex.find(x=>x.batchId===b.dataset.w)))}
-  if(tab==='me')v.innerHTML=`<div class="list"><div class="li"><span>Data refreshed</span><b>${ago(Date.now()-data.at)}</b></div></div><p class="mute" style="font-size:13px">Stock and price changes made here are sent to the cloud and reach the shop computer the next time it goes online. Managing cashiers is done on the shop computer.</p><button class="primary" id="lo" style="background:#e8efee;color:var(--ink)">Sign out</button>`,$('lo').onclick=logout}
+  if(tab==='me')v.innerHTML=`<div class="list"><div class="li"><span>Data refreshed</span><b>${ago(Date.now()-data.at)}</b></div></div><p class="mute" style="font-size:13px">Stock and price changes made here are sent to the cloud and reach the shop computer the next time it goes online. Managing cashiers is done on the shop computer.</p><button class="primary" id="rfd">Returns and refunds</button><button class="primary" id="lo" style="background:#e8efee;color:var(--ink);margin-top:8px">Sign out</button>`,$('lo').onclick=logout,$('rfd').onclick=returnsSheet}
 function logout(){sess=null;data=null;localStorage.removeItem('sess');localStorage.removeItem('data');$('app').classList.add('hide');$('login').classList.remove('hide')}
 async function enter(){$('login').classList.add('hide');$('app').classList.remove('hide');render();await load()}
 $('lgo').onclick=async()=>{$('lerr').textContent='';if(C.url.includes('YOUR-PROJECT')){$('lerr').textContent='Setup needed: edit config.js with your Supabase URL and anon key.';return}
