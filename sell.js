@@ -92,6 +92,7 @@
   }
 
   const api = { sell, voidSale, receiptText };
+  for (const k of Object.keys(api)) if (root.POS_OPS && k in root.POS_OPS) throw new Error('POS_OPS name clash: ' + k + ' is already defined by another phone file');   // a clash would silently replace another feature
   root.POS_OPS = Object.assign(root.POS_OPS || {}, api);
   if (typeof module !== 'undefined') module.exports = api;
 
