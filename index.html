@@ -34,10 +34,11 @@ button.primary[style*="e8efee"]{background:var(--line)!important;color:var(--ink
 <section id="app" class="hide"><header class="row"><div class="grow"><b id="hn">Jelvia Health and Beauty Limited</b><br><small id="sub">Loading…</small></div><button id="ref">⟳ Refresh</button></header>
 <div id="ban"></div><main id="v"></main>
 <div id="toast"></div>
-<nav><button data-t="today" class="on"><span>📊</span>Today</button><button data-t="stock"><span>📦</span>Stock</button><button data-t="alerts"><span>⚠️</span>Alerts</button><button data-t="me"><span>⚙️</span>Account</button></nav></section>
+<nav><button data-t="today" class="on"><span>📊</span>Today</button><button data-t="sell"><span>🛒</span>Sell</button><button data-t="stock"><span>📦</span>Stock</button><button data-t="alerts"><span>⚠️</span>Alerts</button><button data-t="me"><span>⚙️</span>Account</button></nav></section>
 <script src="config.js"></script>
 <script src="ops.js"></script>
 <script src="refund.js"></script>
+<script src="sell.js"></script>
 <script>
 const C=window.POS_CONFIG;document.addEventListener('DOMContentLoaded',()=>{if(C.name){$('bn').textContent='💊 '+C.name;$('hn').textContent=C.name;document.title=C.name}});
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -70,8 +71,8 @@ function render(){if(!data){$('v').innerHTML='<p class="mute" style="text-align:
   const v=$('v'),t=data.t;
   if(tab==='today'){const tot=Object.values(t.methods).reduce((a,b)=>a+Number(b),0)||1;
     v.innerHTML=`<div class="cards">${card('Sales today',N(t.revenue),t.count+' transactions')}${card('Profit today',N(t.profit))}${card('This week',N(data.w.revenue),'profit '+N(data.w.profit))}${card('This month',N(data.mo.revenue),'profit '+N(data.mo.profit))}</div>
-    ${Number(t.discount)>0?`<div class="banner" style="margin:10px 0 0">Price slashes today: ${N(t.discount)}</div>`:''}${t.voided?`<div class="banner" style="margin:10px 0 0">${t.voided} sale(s) voided today</div>`:''}
-    ${varBlock()}${debtBlock()}<h3>Payment methods today</h3><div class="list">${['cash','transfer','pos'].map(m=>{const a=Number(t.methods[m]||0);return`<div style="padding:11px 0"><div class="li" style="padding:0;border:0"><span>${m.toUpperCase()}</span><b>${N(a)}</b></div><div class="bar"><i style="width:${Math.round(a/tot*100)}%"></i></div></div>`}).join('')}</div>
+    ${Number(t.discount)>0?`<div class="banner" style="margin:10px 0 0">Price slashes today: ${N(t.discount)}</div>`:''}${t.refunds&&t.refunds.count?`<div class="banner" style="margin:10px 0 0">Refunds today: ${N(t.refunds.total)} (${t.refunds.count})</div>`:''}${t.voided?`<div class="banner" style="margin:10px 0 0">${t.voided} sale(s) voided today</div>`:''}
+    ${varBlock()}${debtBlock()}<h3>Payment methods today</h3><div class="list">${['cash','transfer','pos'].map(m=>{const a=Number(t.methods[m]||0);return`<div style="padding:11px 0"><div class="li" style="padding:0;border:0"><span>${m.toUpperCase()}</span><b>${N(a)}</b></div><div class="bar"><i style="width:${Math.max(0,Math.round(a/tot*100))}%"></i></div></div>`}).join('')}</div>
     <h3>Best sellers today</h3><div class="list">${t.top.map(x=>`<div class="li"><span>${esc(x.name)}</span><b>${x.qty} sold</b></div>`).join('')||'<div class="li mute">No sales yet today</div>'}</div>
     <h3>Recent sales</h3><div class="list">${t.recent.map(r=>`<div class="li" style="${r.status==='voided'?'opacity:.5':''}"><span>${esc(r.receipt)}<br><small class="mute">${new Date(r.at).toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'})}${r.status==='voided'?' · voided':''}</small></span><b>${N(r.total)}</b></div>`).join('')||'<div class="li mute">No sales yet today</div>'}</div>`;
     v.querySelectorAll('[data-sv]').forEach(b=>b.onclick=()=>reviewSheet((data.v||[]).find(x=>x.id===b.dataset.sv)))}
@@ -84,7 +85,7 @@ function render(){if(!data){$('v').innerHTML='<p class="mute" style="text-align:
     v.innerHTML=`<h3 style="color:var(--bad)">Expired (${ex.length})</h3><div class="list">${L(ex,'out',true)}</div><h3 style="color:var(--warn)">Expiring within 60 days (${so.length})</h3><div class="list">${L(so,'low')}</div>
     <h3>Low or out of stock (${low.length})</h3><div class="list">${low.map(p=>`<div class="li"><span>${esc(p.name)}</span>${stockBadge(p)}</div>`).join('')||'<div class="li mute">All stocked</div>'}</div>`;
     v.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>writeOffBatch(ex.find(x=>x.batchId===b.dataset.w)))}
-  if(tab==='me')v.innerHTML=`<div class="list"><div class="li"><span>Data refreshed</span><b>${ago(Date.now()-data.at)}</b></div></div><p class="mute" style="font-size:13px">Stock and price changes made here are sent to the cloud and reach the shop computer the next time it goes online. Managing cashiers is done on the shop computer.</p><button class="primary" id="rfd">Returns and refunds</button><button class="primary" id="lo" style="background:#e8efee;color:var(--ink);margin-top:8px">Sign out</button>`,$('lo').onclick=logout,$('rfd').onclick=returnsSheet}
+  if(tab==='sell')sellView(v);if(tab==='me')v.innerHTML=`<div class="list"><div class="li"><span>Data refreshed</span><b>${ago(Date.now()-data.at)}</b></div></div><p class="mute" style="font-size:13px">Stock and price changes made here are sent to the cloud and reach the shop computer the next time it goes online. Managing cashiers is done on the shop computer.</p><button class="primary" id="rfd">Returns and refunds</button><button class="primary" id="vds" style="margin-top:8px">Void a sale</button><button class="primary" id="lo" style="background:#e8efee;color:var(--ink);margin-top:8px">Sign out</button>`,$('lo').onclick=logout,$('rfd').onclick=returnsSheet,$('vds').onclick=voidSheet}
 function logout(){sess=null;data=null;localStorage.removeItem('sess');localStorage.removeItem('data');$('app').classList.add('hide');$('login').classList.remove('hide')}
 async function enter(){$('login').classList.add('hide');$('app').classList.remove('hide');render();await load()}
 $('lgo').onclick=async()=>{$('lerr').textContent='';if(C.url.includes('YOUR-PROJECT')){$('lerr').textContent='Setup needed: edit config.js with your Supabase URL and anon key.';return}
