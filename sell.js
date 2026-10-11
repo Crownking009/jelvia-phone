@@ -58,7 +58,7 @@
     for (const p of payments) out.push(rec('sale_payments', { id: uid(), ...base(c), sale_id: sale.id, method: p.method, amount: p.amount, reference: (p.reference || '').trim() || null }, c));
     const grouped = [];                      // the receipt shows one line per product and price, not per batch
     for (const l of lines) { const g = grouped.find((x) => x.productId === l.product_id && x.price === l.unit_price); if (g) g.qty += l.qty; else grouped.push({ productId: l.product_id, name: l.item.name, qty: l.qty, price: l.unit_price, slash: l.list_price - l.unit_price }); }
-    return { records: out, summary: { saleId: sale.id, receiptNo, at: c.now, subtotal, discount: totalDiscount, total, payments, credit, customer: cust ? cust.name : null, rx: sale.rx_ref, lines: grouped } };
+    return { records: out, summary: { saleId: sale.id, receiptNo, at: c.now, subtotal, discount, slash: slashTotal, total, payments, credit, customer: cust ? cust.name : null, rx: sale.rx_ref, lines: grouped } };   // discount = the extra whole-sale discount only; price cuts already show in each line's price
   }
 
   // The owner voids a completed sale. o: { dev, adminId, sale, items:[sale_items rows], credits:[customer_ledger credit_sale rows], hasRefunds, reason }
