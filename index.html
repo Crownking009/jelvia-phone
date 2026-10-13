@@ -30,7 +30,7 @@ button.primary[style*="e8efee"]{background:var(--line)!important;color:var(--ink
 <body>
 <section id="login"><div class="box"><h1 id="bn">💊 Jelvia Health and Beauty Limited</h1><p class="mute" style="margin:0 0 18px">Owner dashboard</p>
 <input id="em" type="email" placeholder="Owner email" autocomplete="username"><input id="pw" type="password" placeholder="Password" autocomplete="current-password">
-<p class="err" id="lerr"></p><button class="primary" id="lgo">Sign in</button></div></section>
+<p class="err" id="lerr"></p><button class="primary" id="lgo">Sign in</button><p style="text-align:center;margin:16px 0 0;font-size:14px"><a href="#" id="lfg" style="color:var(--brand2)">Forgot password?</a></p></div></section>
 <section id="app" class="hide"><header class="row"><div class="grow"><b id="hn">Jelvia Health and Beauty Limited</b><br><small id="sub">Loading…</small></div><button id="ref">⟳ Refresh</button></header>
 <div id="ban"></div><main id="v"></main>
 <div id="toast"></div>
@@ -46,6 +46,7 @@ button.primary[style*="e8efee"]{background:var(--line)!important;color:var(--ink
 <script src="exports.js"></script>
 <script src="shop.js"></script>
 <script src="staff.js"></script>
+<script src="recover.js"></script>
 <script>
 const C=window.POS_CONFIG;document.addEventListener('DOMContentLoaded',()=>{if(C.name){$('bn').textContent='💊 '+C.name;$('hn').textContent=C.name;document.title=C.name}});
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
