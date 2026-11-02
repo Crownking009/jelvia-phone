@@ -47,6 +47,7 @@ button.primary[style*="e8efee"]{background:var(--line)!important;color:var(--ink
 <script src="shop.js"></script>
 <script src="staff.js"></script>
 <script src="recover.js"></script>
+<script src="duplicates.js"></script>
 <script>
 const C=window.POS_CONFIG;document.addEventListener('DOMContentLoaded',()=>{if(C.name){$('bn').textContent='💊 '+C.name;$('hn').textContent=C.name;document.title=C.name}});
 const $=id=>document.getElementById(id),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -142,11 +143,11 @@ const catOpts=cats=>[['','— none —'],...cats.map(c=>[c.id,c.name])];
 async function productRow(id){const row=(await rget(`tbl=eq.products&id=eq.${encodeURIComponent(id)}&select=data`))[0];if(!row)throw new Error('Product not found in the cloud');return row.data}
 async function newProductSheet(){const cats=await catList();
   sheet('New product',[{k:'name',l:'Product name'},{k:'cat',l:'Category',opts:catOpts(cats)},{k:'newcat',l:'Or type a new category (optional)'},{k:'price',l:'Selling price (₦)',t:'number'},{k:'barcode',l:'Barcode (optional)'},{k:'reorder',l:'Low-stock warning at',t:'number',v:5},{k:'rx',l:'Prescription-only drug?',opts:[['0','No'],['1','Yes']]}],
-    async(f,memo)=>{const aid=await getAdmin();if(f.barcode&&!memo.k)await checkBarcode(f.barcode);
+    async(f,memo)=>{const aid=await getAdmin();if(!memo.k)await checkNames(f,null);if(f.barcode&&!memo.k)await checkBarcode(f.barcode);
       await pushRecs(once(memo,f,()=>POS_OPS.addProduct({dev,adminId:aid,name:f.name,categoryId:f.cat||null,newCategory:f.newcat,existingCategories:cats,priceKobo:Math.round(parseFloat(f.price)*100),barcode:f.barcode,reorder:f.reorder,rx:f.rx==='1'})))})}
 async function editSheet(p){let d;const cats=await catList();try{d=await productRow(p.id)}catch(e){return toast(e.message==='auth'?'Please sign in again':e.message)}
   sheet('Edit — '+d.name,[{k:'name',l:'Product name',v:d.name},{k:'cat',l:'Category',opts:catOpts(cats),sel:d.category_id||''},{k:'newcat',l:'Or type a new category (optional)'},{k:'barcode',l:'Barcode (optional)',v:d.barcode||''},{k:'reorder',l:'Low-stock warning at',t:'number',v:d.reorder_level},{k:'rx',l:'Prescription-only drug?',opts:[['0','No'],['1','Yes']],sel:d.prescription_only?'1':'0'}],
-    async(f,memo)=>{const aid=await getAdmin();if(f.barcode&&!memo.k)await checkBarcode(f.barcode,d.id);
+    async(f,memo)=>{const aid=await getAdmin();if(!memo.k)await checkNames(f,d.id);if(f.barcode&&!memo.k)await checkBarcode(f.barcode,d.id);
       await pushRecs(once(memo,f,()=>POS_OPS.editProduct({dev,adminId:aid,product:d,name:f.name,categoryId:f.cat||null,newCategory:f.newcat,existingCategories:cats,barcode:f.barcode,reorder:f.reorder,rx:f.rx==='1'})))})}
 async function archiveProd(p){if(!confirm('Archive '+p.name+'?'+(p.sellable>0?'\n\n'+p.sellable+' units are still in stock. They stop showing for sale and in the stock value until you restore the product.':'')+'\n\nOld sales and stock records are kept.'))return;
   try{const d=await productRow(p.id);await pushRecs(POS_OPS.archiveProduct({dev,adminId:await getAdmin(),product:d}));toast('Archived ✓ — reaches the shop computer when it next goes online');load()}catch(e){alert(e.message==='auth'?'Please sign in again':e.message)}}
