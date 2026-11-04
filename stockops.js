@@ -89,7 +89,7 @@
         const v = await ask('Count — ' + p.name, 'Units on the shelf (0 if none)', ex ? ex.counted : ''); if (v === null || v === '') return; const n = Number(v);
         if (!Number.isInteger(n) || n < 0) return err('Counts must be whole numbers (0 or more)'); err('');
         if (ex) { ex.counted = n; ex.system = p.sellable; } else list.push({ productId: p.id, name: p.name, counted: n, system: p.sellable }); keep(list); drawList(); }; }); };
-    const search = async () => { try { res = await rpc('sell_catalog', { p_q: $$('#sc_q').value, p_today: today() }); drawRes(); } catch (e) { err(fail(e)); } };
+    const search = async () => { try { res = await rpc('sell_catalog', { p_q: $$('#sc_q').value, p_today: today() }); if (typeof labelRows === 'function') res = labelRows(res); drawRes(); } catch (e) { err(fail(e)); } };
     $$('#sc_q').oninput = () => { clearTimeout(tmr); tmr = setTimeout(search, 250); }; drawList(); search();
     $$('#sc_x').onclick = () => bg.remove(); $$('#sc_h').onclick = () => { bg.remove(); pastCounts(); };
     $$('#sc_c').onclick = () => { if (!list.length || !confirm('Clear all ' + list.length + ' counts you entered?')) return; list = []; keep(list); drawList(); };

@@ -121,7 +121,7 @@
     q.oninput = () => { st.q = q.value; clearTimeout(st.t); st.t = setTimeout(search, 250); };
     $('sl_go').onclick = checkout; drawRes(); drawCart(); if (!st.loaded) search();
   };
-  async function search() { try { st.res = await rpc('sell_catalog', { p_q: st.q, p_today: today() }); st.loaded = true; drawRes(); } catch (e) { toast(fail(e)); } }
+  async function search() { try { st.res = await rpc('sell_catalog', { p_q: st.q, p_today: today() }); if (typeof labelRows === 'function') st.res = labelRows(st.res); st.loaded = true; drawRes(); } catch (e) { toast(fail(e)); } }
   function drawRes() {
     const el = $('sl_res'); if (!el) return;
     el.innerHTML = st.res.map((p) => `<div class="li" data-id="${esc(p.id)}" style="cursor:pointer${p.sellable > 0 ? '' : ';opacity:.5'}"><span>${esc(p.name)}${p.rx ? ' <span class="badge low">Rx</span>' : ''}<br><small class="mute">${N(p.price)}${p.nextExpiry ? ' · expires ' + esc(p.nextExpiry) : ''}</small></span>${p.sellable > 0 ? `<span class="badge">${p.sellable}</span>` : '<span class="badge out">Out</span>'}</div>`).join('') || '<div class="li mute">No product found</div>';

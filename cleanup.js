@@ -69,15 +69,15 @@
     let all; try { all = await rpc('product_names', {}); } catch (e) { return toast(fail(e)); }
     all.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
     const bg = overlay(`<h2 style="margin:0 0 4px;font-size:19px">Delete a product</h2><p class="mute" style="margin:0 0 10px">Search for the product. Archived ones are included.</p><input id="dp_q" placeholder="Search product name…" autocomplete="off"><div class="list" id="dp_l"></div><button class="primary" id="dp_x" style="${GREY};margin-top:12px">Back</button>`);
-    const $$ = (s) => bg.querySelector(s), draw = () => { const q = POS_OPS.normName($$('#dp_q').value), rows = all.filter((p) => !q || POS_OPS.normName(p.name).includes(q)).slice(0, 40);
-      $$('#dp_l').innerHTML = rows.map((p) => `<div class="li" data-id="${esc(p.id)}" style="cursor:pointer"><span>${esc(p.name)}</span>${p.active === 1 ? '' : '<span class="badge">Archived</span>'}</div>`).join('') || '<div class="li mute">No product found</div>';
+    const $$ = (s) => bg.querySelector(s), draw = () => { const q = POS_OPS.normName($$('#dp_q').value), rows = all.filter((p) => !q || POS_OPS.normName(POS_OPS.optLabel(p.name, p)).includes(q)).slice(0, 40);
+      $$('#dp_l').innerHTML = rows.map((p) => `<div class="li" data-id="${esc(p.id)}" style="cursor:pointer"><span>${esc(POS_OPS.optLabel(p.name, p))}</span>${p.active === 1 ? '' : '<span class="badge">Archived</span>'}</div>`).join('') || '<div class="li mute">No product found</div>';
       $$('#dp_l').querySelectorAll('[data-id]').forEach((el) => { el.onclick = () => { bg.remove(); confirmDelete(all.find((p) => p.id === el.dataset.id)); }; }); };
     $$('#dp_q').oninput = draw; draw(); $$('#dp_x').onclick = () => { bg.remove(); cleanupSheet(); };
   }
   async function confirmDelete(p) {
     let usage, row, adminId; try { adminId = await getAdmin(); [usage, row] = await Promise.all([rpc('product_usage', { p_product: p.id }), prodRow(p.id)]); } catch (e) { return toast(fail(e)); }
     let problem = null; try { POS_OPS.deleteProduct({ dev, adminId, product: row, usage }); } catch (e) { problem = e.message; }
-    const bg = overlay(`<h2 style="margin:0 0 4px;font-size:19px">Delete “${esc(row.name)}”?</h2><p class="mute" style="margin:0 0 12px">Sold ${usage.sold} time(s) · returned ${usage.returned} time(s) · stock ${usage.stock}</p>
+    const bg = overlay(`<h2 style="margin:0 0 4px;font-size:19px">Delete “${esc(POS_OPS.optLabel(row.name, row))}”?</h2><p class="mute" style="margin:0 0 12px">Sold ${usage.sold} time(s) · returned ${usage.returned} time(s) · stock ${usage.stock}</p>
       ${problem ? `<div class="banner" style="margin:0 0 12px">${esc(problem)}</div>` : '<p style="margin:0 0 12px">It has never been sold and has no stock, so it can be deleted. This cannot be undone from the phone.</p>'}
       ${problem ? '' : `<button class="primary" id="dl_ok" style="background:var(--bad)">Delete this product</button>`}<button class="primary" id="dl_x" style="${GREY};margin-top:8px">${problem ? 'Back' : 'Cancel'}</button><p class="err" id="dl_e"></p>`);
     const $$ = (s) => bg.querySelector(s); $$('#dl_x').onclick = () => { bg.remove(); deleteProductSheet(); };
